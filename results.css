@@ -1,0 +1,54 @@
+.student-filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-control {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: var(--card-color);
+    font-family: 'Cairo', sans-serif;
+}
+
+.students-table-wrapper {
+    background-color: var(--card-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow-x: auto;
+}
+
+.students-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.students-table thead tr {
+    background-color: var(--background-color);
+}
+
+.students-table th, 
+.students-table td {
+    padding: 1rem;
+    text-align: right;
+    border-bottom: 1px solid #eee;
+}
+
+.students-table th {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.student-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.student-row:hover {
+    background-color: var(--pastel-purple);
+    transition: background-color 0.2s ease;
+}
