@@ -100,9 +100,8 @@ function getRemainingTime($end_datetime, $quiz_date) {
     return implode('، ', $parts);
 }
 
-function generateQuizLink($quiz_id, $access_code) {
-    return "https://" . $_SERVER['HTTP_HOST'] . "/take_quiz.php?id=" . $quiz_id . "&code=" . $access_code;
-}
+
+
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -114,17 +113,17 @@ function generateQuizLink($quiz_id, $access_code) {
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script>
-        function copyQuizLink(quizId, accessCode) {
-            const link = `${window.location.protocol}//${window.location.host}/take_quiz.php?id=${quizId}&code=${accessCode}`;
-            navigator.clipboard.writeText(link).then(() => {
-                const btn = document.querySelector(`#copy-btn-${quizId}`);
-                btn.textContent = 'تم النسخ!';
-                setTimeout(() => {
-                    btn.textContent = 'نسخ الرابط';
-                }, 2000);
-            });
-        }
-    </script>
+    function copyQuizLink(quizId, accessCode) {
+        const link = `${window.location.protocol}//${window.location.host}/Quiz/take_quiz.php?id=${quizId}&code=${accessCode}`;
+        navigator.clipboard.writeText(link).then(() => {
+            const btn = document.querySelector(`#copy-btn-${quizId}`);
+            btn.textContent = 'تم النسخ!';
+            setTimeout(() => {
+                btn.textContent = 'نسخ الرابط';
+            }, 2000);
+        });
+    }
+</script>
 </head>
 <body>
     <div class="dashboard-wrapper">

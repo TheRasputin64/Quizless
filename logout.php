@@ -1,11 +1,10 @@
 <?php
 session_start();
 
-$redirect_url = 'index.php'; // Default redirect for students
+$redirect_url = isset($_SESSION['admin_id']) ? 'admin_login.php' : 'index.php';
 
 if (isset($_SESSION['admin_id'])) {
     error_log('Admin logged out: ' . $_SESSION['admin_id']);
-    $redirect_url = 'admin_login.php'; // Redirect for admin
 } else if (isset($_SESSION['student_id'])) {
     error_log('Student logged out: ' . $_SESSION['student_id']);
 }
@@ -17,9 +16,13 @@ if (isset($_COOKIE[session_name()])) {
 }
 
 session_destroy();
+
 setcookie('remember_me', '', time()-3600, '/');
 setcookie('user_preferences', '', time()-3600, '/');
 
-header('Location: ' . $redirect_url);
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Location: " . $redirect_url);
 exit();
 ?>

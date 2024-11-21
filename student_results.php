@@ -3,6 +3,25 @@ require_once 'config.php';
 redirectIfNotAdmin();
 $conn = getDBConnection();
 
+// Handle student approval/unapproval
+if (isset($_GET['action']) && isset($_GET['id'])) {
+    $student_id = intval($_GET['id']);
+    $action = $_GET['action'];
+    
+    if ($action === 'approve') {
+        $update_query = "UPDATE students SET is_approved = 1 WHERE student_id = ?";
+    } elseif ($action === 'unapprove') {
+        $update_query = "UPDATE students SET is_approved = 0 WHERE student_id = ?";
+    }
+    
+    $stmt = $conn->prepare($update_query);
+    $stmt->bind_param("i", $student_id);
+    $stmt->execute();
+    
+    header("Location: student_results.php?action_status=" . ($action === 'approve' ? 'approved' : 'unapproved'));
+    exit();
+}
+
 $students_query = "
     SELECT 
         s.student_id, 
@@ -42,24 +61,58 @@ $unapproved_students = $total_students - $approved_students;
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="results.css">
     <script>
-        function filterStudents() {
-            const searchTerm = document.getElementById('student-search').value.toLowerCase();
-            const approvedFilter = document.getElementById('approved-filter').value;
-            const rows = document.querySelectorAll('.student-row');
+function filterStudents() {
+    const searchTerm = document.getElementById('student-search').value.toLowerCase();
+    const approvedFilter = document.getElementById('approved-filter').value;
+    const rows = document.querySelectorAll('.student-row');
 
-            rows.forEach(row => {
-                const name = row.querySelector('.student-name').textContent.toLowerCase();
-                const code = row.querySelector('.student-code').textContent.toLowerCase();
-                const isApproved = row.getAttribute('data-approved') === '1';
-                
-                const nameMatch = name.includes(searchTerm) || code.includes(searchTerm);
-                const approvedMatch = approvedFilter === 'all' || 
-                    (approvedFilter === 'approved' && isApproved) || 
-                    (approvedFilter === 'unapproved' && !isApproved);
+    rows.forEach(row => {
+        const name = row.querySelector('.student-name').textContent.toLowerCase();
+        const code = row.querySelector('.student-code').textContent.toLowerCase();
+        const isApproved = row.getAttribute('data-approved') === '1';
+        
+        const nameMatch = name.includes(searchTerm) || code.includes(searchTerm);
+        const approvedMatch = approvedFilter === 'all' || 
+            (approvedFilter === 'approved' && isApproved) || 
+            (approvedFilter === 'unapproved' && !isApproved);
 
-                row.style.display = nameMatch && approvedMatch ? '' : 'none';
-            });
+        row.style.display = nameMatch && approvedMatch ? '' : 'none';
+    });
+}
+
+function showActionOverlay(action, studentId, studentName) {
+    const overlay = document.createElement('div');
+    overlay.classList.add('action-overlay');
+    
+    const title = action === 'approve' ? 'اعتماد الطالب' : 'إلغاء اعتماد الطالب';
+    const iconClass = action === 'approve' ? 'publish-icon' : 'delete-icon';
+    const message = action === 'approve' 
+        ? `هل أنت متأكد من اعتماد الطالب ${studentName}؟`
+        : `هل أنت متأكد من إلغاء اعتماد الطالب ${studentName}؟`;
+
+    overlay.innerHTML = `
+        <div class="overlay-content">
+            <div class="overlay-icon ${iconClass}"></div>
+            <h3>${title}</h3>
+            <p>${message}</p>
+            <div class="overlay-actions">
+                <a href="student_results.php?action=${action}&id=${studentId}" class="btn btn-${action === 'approve' ? 'publish' : 'delete'}">
+                    ${title}
+                </a>
+                <button onclick="this.closest('.action-overlay').remove()" class="btn" style="background-color: var(--background-color); color: var(--text-primary);">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
         }
+    });
+}
     </script>
 </head>
 <body>
@@ -70,7 +123,7 @@ $unapproved_students = $total_students - $approved_students;
                 <h3><?= htmlspecialchars($_SESSION['admin_name']) ?></h3>
             </div>
             <nav class="admin-nav">
-                <a href="dashboard.php" class="nav-item">الاختبارات</a>
+                <a href="admin.php" class="nav-item">الاختبارات</a>
                 <a href="student_results.php" class="nav-item active">نتائج الطلاب</a>
                 <a href="create_quiz.php" class="nav-item">إنشاء اختبار جديد</a>
                 <a href="logout.php" class="nav-item logout">تسجيل الخروج</a>
@@ -139,7 +192,7 @@ $unapproved_students = $total_students - $approved_students;
                     <tbody>
                         <?php foreach ($students as $student): ?>
                         <tr class="student-row" data-approved="<?= $student['is_approved'] ?>">
-                            <td>
+                            <td class="text-right">
                                 <span class="student-name">
                                     <?= htmlspecialchars($student['name']) ?>
                                 </span>
@@ -161,7 +214,20 @@ $unapproved_students = $total_students - $approved_students;
                             <td>
                                 <div class="student-actions">
                                     <a href="student_details.php?id=<?= $student['student_id'] ?>" class="btn btn-edit">التفاصيل</a>
-                                    <a href="student_quizzes.php?id=<?= $student['student_id'] ?>" class="btn btn-results">الاختبارات</a>
+                                    <a href="student_quizzes.php?id=<?= $student['student_id'] ?>" class="btn btn-stats">الاختبارات</a>
+                                    <?php if ($student['is_approved']): ?>
+                                        <button 
+                                            onclick="showActionOverlay('unapprove', <?= $student['student_id'] ?>, '<?= htmlspecialchars($student['name']) ?>')" 
+                                            class="btn btn-delete">
+                                            إلغاء الاعتماد
+                                        </button>
+                                    <?php else: ?>
+                                        <button 
+                                            onclick="showActionOverlay('approve', <?= $student['student_id'] ?>, '<?= htmlspecialchars($student['name']) ?>')" 
+                                            class="btn btn-publish">
+                                            اعتماد
+                                        </button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
