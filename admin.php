@@ -6,19 +6,23 @@ $conn = getDBConnection();
 $active_quizzes_query = "SELECT q.*, COUNT(DISTINCT sa.student_id) as attempt_count 
                         FROM quizzes q 
                         LEFT JOIN student_attempts sa ON q.quiz_id = sa.quiz_id 
-                        WHERE q.admin_id = ? AND q.status = 'published' 
-                        AND (q.end_datetime IS NULL OR q.end_datetime > NOW())
+                        WHERE q.admin_id = ? 
+                        AND q.status = 'published' 
+                        AND CONCAT(q.quiz_date, ' ', q.end_datetime) > NOW()
                         GROUP BY q.quiz_id 
                         ORDER BY q.created_at DESC";
 
+// Past quizzes query - Should show quizzes that have ended
 $past_quizzes_query = "SELECT q.*, COUNT(DISTINCT sa.student_id) as attempt_count 
                        FROM quizzes q 
                        LEFT JOIN student_attempts sa ON q.quiz_id = sa.quiz_id 
-                       WHERE q.admin_id = ? AND 
-                       (q.status = 'published' AND q.end_datetime < NOW())
+                       WHERE q.admin_id = ? 
+                       AND q.status = 'published' 
+                       AND CONCAT(q.quiz_date, ' ', q.end_datetime) <= NOW()
                        GROUP BY q.quiz_id 
                        ORDER BY q.created_at DESC";
 
+// Draft quizzes query remains the same as it doesn't depend on time
 $draft_quizzes_query = "SELECT q.*, COUNT(DISTINCT sa.student_id) as attempt_count 
                         FROM quizzes q 
                         LEFT JOIN student_attempts sa ON q.quiz_id = sa.quiz_id 
